@@ -1,4 +1,4 @@
-package glogger
+package glog
 
 var _default = Create(INFO)
 

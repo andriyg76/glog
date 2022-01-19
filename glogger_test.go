@@ -1,4 +1,4 @@
-package glogger
+package glog
 
 import (
 	"github.com/stretchr/testify/assert"
