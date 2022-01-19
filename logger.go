@@ -84,15 +84,37 @@ func (l logger) IsEnabled(logLevel LogLevel) bool {
 	return logLevel.weight >= l.logLevel.weight
 }
 
-//go:generate command stringer -type LogLevel
-
-func Create(logLevel LogLevel) Logger {
+func create(logLevel LogLevel) logger {
 	return logger{
 		logLevel: logLevel,
 		err:      _stderr,
 		out:      _stdout,
 		fatalf:   _stderr.Fatalf,
 	}
+}
+
+func createFileLogger(file string, level ...LogLevel) (logger, error) {
+	logLevel := INFO
+	if len(level) > 0 {
+		logLevel = level[0]
+	}
+
+	var instance = logger{
+		logLevel: logLevel,
+	}
+	openFile, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		return instance, _default.Error("Error creating file %s output: %s", file, err)
+	}
+	w := log.New(openFile, "", log.LstdFlags)
+	instance.err = w
+	instance.out = w
+	instance.fatalf = w.Fatalf
+	return instance, nil
+}
+
+func Create(logLevel LogLevel) Logger {
+	return create(logLevel)
 }
 
 var _stdout = log.New(os.Stdout, "", log.LstdFlags)
@@ -125,11 +147,15 @@ func (l logger) TraceLogger() Output {
 }
 
 func (l logger) Log(logLevel LogLevel, format string, objs ...interface{}) {
+	logFormat := logLevel.prefix + " " + format
+
 	if logLevel == PANIC {
-		l.err.Panicf(format, objs...)
+		l.err.Panicf(logFormat, objs...)
+		return
 	}
 	if logLevel == FATAL {
-		l.fatalf(format, objs...)
+		l.fatalf(logFormat, objs...)
+		return
 	}
 
 	var out Output
@@ -141,7 +167,7 @@ func (l logger) Log(logLevel LogLevel, format string, objs ...interface{}) {
 		out = l.out
 	}
 
-	out.Printf(logLevel.prefix+" "+format, objs...)
+	out.Printf(logFormat, objs...)
 }
 
 func (l logger) Debug(format string, objs ...interface{}) {

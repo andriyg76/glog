@@ -1,13 +1,13 @@
 package glog
 
-var _default = Create(INFO)
+var _default Logger = create(INFO)
 
 func Default() Logger {
 	return _default
 }
 
 func SetLevel(logLevel LogLevel) {
-	_default = Create(logLevel)
+	_default = create(logLevel)
 }
 
 func Trace(format string, a ...interface{}) {
@@ -67,4 +67,22 @@ func Log(level LogLevel, a string, objs ...interface{}) {
 
 func OutputLevel(level LogLevel) Output {
 	return _default.GetOutput(level)
+}
+
+func ToFile(file string, level ...LogLevel) {
+	log, error := createFileLogger(file, level...)
+	if error == nil {
+		_default = log
+	}
+}
+
+func ToFileAndConsole(file string, fileLevel LogLevel, consoleLevel LogLevel) {
+	log, error := createFileLogger(file, fileLevel)
+	if error == nil {
+		_ = Error("Can't create file loger for composite logger")
+	}
+
+	_default = composite{
+		chain: []Logger{log, create(consoleLevel)},
+	}
 }

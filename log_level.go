@@ -6,37 +6,37 @@ type LogLevel struct {
 }
 
 var TRACE = LogLevel{
-	prefix: "[trace]",
+	prefix: "TRACE",
 	weight: -2,
 }
 
 var DEBUG = LogLevel{
-	prefix: "[debug]",
+	prefix: "DEBUG",
 	weight: -1,
 }
 
 var INFO = LogLevel{
-	prefix: "[info ]",
+	prefix: " INFO",
 	weight: 0,
 }
 
 var WARN = LogLevel{
-	prefix: "[warn ]",
+	prefix: " WARN",
 	weight: 1,
 }
 
 var ERROR = LogLevel{
-	prefix: "[error]",
+	prefix: "ERROR",
 	weight: 2,
 }
 
 var PANIC = LogLevel{
-	prefix: "[trace]",
+	prefix: "PANIC",
 	weight: 2,
 }
 
 var FATAL = LogLevel{
-	prefix: "[fatal]",
+	prefix: "FATAL",
 	weight: 2,
 }
 
