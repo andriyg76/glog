@@ -39,7 +39,7 @@ func TestFatal(t *testing.T) {
 	assert.NotEqual(t, err, "")
 
 	_logger.Info("Created fatal: %s", err)
-	assert.Equal(t, err, "Fatal fatal")
+	assert.Equal(t, "FATAL Fatal fatal", err)
 }
 
 func TestPanic(t *testing.T) {
@@ -55,7 +55,7 @@ func TestPanic(t *testing.T) {
 
 	assert.NotNil(t, r)
 	_logger.Info("Recover from panic: %s", r)
-	assert.Equal(t, r, "Panic panic")
+	assert.Equal(t, "PANIC Panic panic", r)
 }
 
 func TestLevels(t *testing.T) {
