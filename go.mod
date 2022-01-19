@@ -1,4 +1,4 @@
-module github.com/andriyg76/glogger
+module github.com/andriyg76/glog
 
 go 1.12
 
