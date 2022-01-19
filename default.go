@@ -42,8 +42,8 @@ func IsWarn() bool {
 	return _default.IsWarn()
 }
 
-func Error(format string, a ...interface{}) {
-	_default.Error(format, a...)
+func Error(format string, a ...interface{}) error {
+	return _default.Error(format, a...)
 }
 
 func IsError() bool {

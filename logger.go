@@ -6,50 +6,6 @@ import (
 	"os"
 )
 
-type LogLevel struct {
-	prefix string
-	weight int
-}
-
-var TRACE = LogLevel{
-	prefix: "[trace]",
-	weight: -2,
-}
-
-var DEBUG = LogLevel{
-	prefix: "[debug]",
-	weight: -1,
-}
-
-var INFO = LogLevel{
-	prefix: "[info ]",
-	weight: 0,
-}
-
-var WARN = LogLevel{
-	prefix: "[warn ]",
-	weight: 1,
-}
-
-var ERROR = LogLevel{
-	prefix: "[error]",
-	weight: 2,
-}
-
-var PANIC = LogLevel{
-	prefix: "[trace]",
-	weight: 2,
-}
-
-var FATAL = LogLevel{
-	prefix: "[fatal]",
-	weight: 2,
-}
-
-func (l LogLevel) String() string {
-	return l.prefix
-}
-
 type Output interface {
 	Printf(format string, a ...interface{})
 }
@@ -77,7 +33,7 @@ type WarnLogger interface {
 }
 
 type ErrorLogger interface {
-	Error(format string, a ...interface{})
+	Error(format string, a ...interface{}) error
 	IsError() bool
 }
 
@@ -101,6 +57,7 @@ type logger struct {
 	logLevel LogLevel
 	out      *log.Logger
 	err      *log.Logger
+	fatalf   func(format string, a ...interface{})
 }
 
 func (l logger) IsDebug() bool {
@@ -134,6 +91,7 @@ func Create(logLevel LogLevel) Logger {
 		logLevel: logLevel,
 		err:      _stderr,
 		out:      _stdout,
+		fatalf:   _stderr.Fatalf,
 	}
 }
 
@@ -167,6 +125,13 @@ func (l logger) TraceLogger() Output {
 }
 
 func (l logger) Log(logLevel LogLevel, format string, objs ...interface{}) {
+	if logLevel == PANIC {
+		l.err.Panicf(format, objs...)
+	}
+	if logLevel == FATAL {
+		l.fatalf(format, objs...)
+	}
+
 	var out Output
 	if logLevel.weight < l.logLevel.weight {
 		out = dumbLoggerInstance
@@ -177,13 +142,6 @@ func (l logger) Log(logLevel LogLevel, format string, objs ...interface{}) {
 	}
 
 	out.Printf(logLevel.prefix+" "+format, objs...)
-
-	if logLevel == PANIC {
-		panic(fmt.Sprintf(format, objs...))
-	}
-	if logLevel == FATAL {
-		os.Exit(1)
-	}
 }
 
 func (l logger) Debug(format string, objs ...interface{}) {
@@ -206,8 +164,10 @@ func (l logger) Warn(format string, objs ...interface{}) {
 	l.Log(WARN, format, objs...)
 }
 
-func (l logger) Error(format string, objs ...interface{}) {
-	l.Log(ERROR, format, objs...)
+func (l logger) Error(format string, objs ...interface{}) error {
+	err := fmt.Errorf(format, objs...)
+	l.Log(ERROR, "%s", err)
+	return err
 }
 
 func (l logger) Panic(format string, objs ...interface{}) {
