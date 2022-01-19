@@ -1,6 +1,7 @@
 package glog
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
@@ -24,18 +25,37 @@ func init() {
 	_stderr = log.New(&se, "", log.LstdFlags)
 }
 
+func TestFatal(t *testing.T) {
+	_logger := Create(TRACE)
+
+	var err string
+	logger := _logger.(logger)
+	logger.fatalf = func(format string, a ...interface{}) {
+		err = fmt.Sprintf(format, a...)
+	}
+
+	logger.Fatal("Fatal %s", "fatal")
+
+	assert.NotEqual(t, err, "")
+
+	_logger.Info("Created fatal: %s", err)
+	assert.Equal(t, "FATAL Fatal fatal", err)
+}
+
 func TestPanic(t *testing.T) {
 	_logger := Create(TRACE)
 
-	defer func() {
-		r := recover()
-		assert.NotNil(t, r)
-
-		_logger.Info("Recover from panic: %s", r)
-		assert.Equal(t, r, "Panic panic")
+	var r interface{}
+	func() {
+		defer func() {
+			r = recover()
+		}()
+		_logger.Panic("Panic %s", "panic")
 	}()
 
-	_logger.Panic("Panic %s", "panic")
+	assert.NotNil(t, r)
+	_logger.Info("Recover from panic: %s", r)
+	assert.Equal(t, "PANIC Panic panic", r)
 }
 
 func TestLevels(t *testing.T) {
