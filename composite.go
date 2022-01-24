@@ -146,6 +146,10 @@ func (c composite) Fatal(format string, a ...interface{}) {
 	}
 }
 
-func Chain(loggers ...Logger) {
-	_default = composite{chain: loggers}
+func DefaultComposite(main Logger, loggers ...Logger) {
+	_default = Composite(main, loggers...)
+}
+
+func Composite(main Logger, loggers ...Logger) Logger {
+	return composite{chain: append([]Logger{main}, loggers...)}
 }
