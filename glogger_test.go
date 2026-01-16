@@ -1,6 +1,7 @@
 package glog
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -83,6 +84,35 @@ func TestLevels(t *testing.T) {
 	checkLog(t, ERROR, str, INFO, "", "")
 	checkLog(t, ERROR, str, WARN, "", "")
 	checkLog(t, ERROR, str, ERROR, "", str)
+}
+
+func TestSetLevel(t *testing.T) {
+	logger := Create(INFO)
+	setter, ok := logger.(LevelSetter)
+	assert.True(t, ok)
+
+	assert.False(t, logger.IsDebug())
+	setter.SetLevel(DEBUG)
+	assert.True(t, logger.IsDebug())
+}
+
+func TestOutputRoutingByLevel(t *testing.T) {
+	var infoOut bytes.Buffer
+	var debugOut bytes.Buffer
+
+	logger := NewWithWriters(&infoOut, &infoOut, DEBUG)
+	router, ok := logger.(LevelRouter)
+	assert.True(t, ok)
+
+	router.SetOutputForLevel(DEBUG, &debugOut)
+	router.SetOutputForLevel(TRACE, &debugOut)
+
+	logger.Debug("debug message")
+	logger.Info("info message")
+
+	assert.Contains(t, debugOut.String(), "DEBUG debug message")
+	assert.Contains(t, infoOut.String(), "INFO info message")
+	assert.NotContains(t, infoOut.String(), "DEBUG debug message")
 }
 
 func checkLog(t *testing.T, ll LogLevel, str string, pl LogLevel, std_out string, stderr_out string) {
