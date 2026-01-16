@@ -146,8 +146,16 @@ func (c composite) Fatal(format string, a ...interface{}) {
 	}
 }
 
+func (c composite) SetLevel(logLevel LogLevel) {
+	for _, l := range c.chain {
+		if setter, ok := l.(LevelSetter); ok {
+			setter.SetLevel(logLevel)
+		}
+	}
+}
+
 func DefaultComposite(main Logger, loggers ...Logger) {
-	_default = Composite(main, loggers...)
+	setDefault(Composite(main, loggers...))
 }
 
 func Composite(main Logger, loggers ...Logger) Logger {

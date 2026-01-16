@@ -1,78 +1,116 @@
 package glog
 
-var _default Logger = create(INFO)
+import (
+	"io"
+	"sync/atomic"
+)
+
+var defaultLogger atomic.Value
+
+func init() {
+	defaultLogger.Store(create(INFO))
+}
 
 func Default() Logger {
-	return _default
+	return defaultLogger.Load().(Logger)
+}
+
+func setDefault(logger Logger) {
+	defaultLogger.Store(logger)
 }
 
 func SetLevel(logLevel LogLevel) {
-	_default = create(logLevel)
+	if setter, ok := Default().(LevelSetter); ok {
+		setter.SetLevel(logLevel)
+		return
+	}
+	setDefault(create(logLevel))
+}
+
+func SetWriters(out io.Writer, err io.Writer, logLevel LogLevel) {
+	setDefault(NewWithWriters(out, err, logLevel))
+}
+
+func SetOutputForLevel(logLevel LogLevel, out io.Writer) bool {
+	if router, ok := Default().(LevelRouter); ok {
+		router.SetOutputForLevel(logLevel, out)
+		return true
+	}
+	return false
+}
+
+func SetOutputs(outputs map[LogLevel]io.Writer) bool {
+	if router, ok := Default().(LevelRouter); ok {
+		router.SetOutputs(outputs)
+		return true
+	}
+	return false
 }
 
 func Trace(format string, a ...interface{}) {
-	_default.Trace(format, a...)
+	Default().Trace(format, a...)
 }
 
 func IsTrace() bool {
-	return _default.IsTrace()
+	return Default().IsTrace()
 }
 
 func Debug(format string, a ...interface{}) {
-	_default.Debug(format, a...)
+	Default().Debug(format, a...)
 }
 
 func IsDebug() bool {
-	return _default.IsDebug()
+	return Default().IsDebug()
 }
 
 func Info(format string, a ...interface{}) {
-	_default.Info(format, a...)
+	Default().Info(format, a...)
 }
 
 func IsInfo() bool {
-	return _default.IsInfo()
+	return Default().IsInfo()
 }
 
 func Warn(format string, a ...interface{}) {
-	_default.Warn(format, a...)
+	Default().Warn(format, a...)
 }
 
 func IsWarn() bool {
-	return _default.IsWarn()
+	return Default().IsWarn()
 }
 
 func Error(format string, a ...interface{}) error {
-	return _default.Error(format, a...)
+	return Default().Error(format, a...)
 }
 
 func IsError() bool {
-	return _default.IsError()
+	return Default().IsError()
 }
 
 func IsEnabled(logLevel LogLevel) bool {
-	return _default.IsEnabled(logLevel)
+	return Default().IsEnabled(logLevel)
 }
+
 func Panic(format string, a ...interface{}) {
-	_default.Panic(format, a...)
+	Default().Panic(format, a...)
 }
 
 func Fatal(format string, a ...interface{}) {
-	_default.Fatal(format, a...)
+	Default().Fatal(format, a...)
 }
 
 func Log(level LogLevel, a string, objs ...interface{}) {
-	_default.Log(level, a, objs...)
+	Default().Log(level, a, objs...)
 }
 
 func OutputLevel(level LogLevel) Output {
-	return _default.GetOutput(level)
+	return Default().GetOutput(level)
 }
 
 func ToFile(file string, level ...LogLevel) {
 	log, error := createFileLogger(file, level...)
 	if error == nil {
-		_default = log
+		setDefault(log)
 	}
 }
 
@@ -82,7 +120,7 @@ func ToFileAndConsole(file string, fileLevel LogLevel, consoleLevel LogLevel) {
 		_ = Error("Can't create file loger for composite logger")
 	}
 
-	_default = composite{
+	setDefault(composite{
 		chain: []Logger{log, create(consoleLevel)},
-	}
+	})
 }
