@@ -1,9 +1,37 @@
 package glog
 
 import (
-	"github.com/stretchr/testify/assert"
+	"bytes"
+	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestComposite_ForwardsToAllLoggers(t *testing.T) {
+	var buf1, buf2 bytes.Buffer
+	log1 := NewWithWriters(&buf1, &buf1, INFO)
+	log2 := NewWithWriters(&buf2, &buf2, INFO)
+	comp := Composite(log1, log2)
+
+	comp.Info("forwarded")
+
+	assert.Contains(t, buf1.String(), "forwarded")
+	assert.Contains(t, buf2.String(), "forwarded")
+}
+
+func TestDefaultComposite_DefaultWritesToAll(t *testing.T) {
+	var buf1, buf2 bytes.Buffer
+	log1 := NewWithWriters(&buf1, &buf1, INFO)
+	log2 := NewWithWriters(&buf2, &buf2, INFO)
+	defer SetWriters(os.Stdout, os.Stderr, INFO)
+
+	DefaultComposite(log1, log2)
+	Info("multi")
+
+	assert.Contains(t, buf1.String(), "multi")
+	assert.Contains(t, buf2.String(), "multi")
+}
 
 func TestComposite_IsEnabled(t *testing.T) {
 	debug := create(DEBUG)

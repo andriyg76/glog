@@ -9,37 +9,44 @@ import (
 	"sync/atomic"
 )
 
+// Output writes formatted log messages. Used for level-specific writers (e.g. DebugLogger(), GetOutput).
 type Output interface {
 	Printf(format string, a ...interface{})
 }
 
+// TraceLogger provides trace-level logging and an Output for trace messages.
 type TraceLogger interface {
 	Trace(format string, a ...interface{})
 	TraceLogger() Output
 	IsTrace() bool
 }
 
+// DebugLogger provides debug-level logging and an Output for debug messages.
 type DebugLogger interface {
 	Debug(format string, a ...interface{})
 	IsDebug() bool
 	DebugLogger() Output
 }
 
+// InfoLogger provides info-level logging.
 type InfoLogger interface {
 	Info(format string, a ...interface{})
 	IsInfo() bool
 }
 
+// WarnLogger provides warn-level logging.
 type WarnLogger interface {
 	Warn(format string, a ...interface{})
 	IsWarn() bool
 }
 
+// ErrorLogger provides error-level logging; Error returns an error for chaining.
 type ErrorLogger interface {
 	Error(format string, a ...interface{}) error
 	IsError() bool
 }
 
+// Logger is the main logging interface: all level methods, Log, IsEnabled, GetOutput, Panic, Fatal.
 type Logger interface {
 	DebugLogger
 	TraceLogger
@@ -56,10 +63,12 @@ type Logger interface {
 	Fatal(format string, a ...interface{})
 }
 
+// LevelSetter allows changing the minimum log level at runtime.
 type LevelSetter interface {
 	SetLevel(logLevel LogLevel)
 }
 
+// LevelRouter is a Logger that can route output per level (SetOutputForLevel, SetOutputs).
 type LevelRouter interface {
 	Logger
 	SetOutputForLevel(logLevel LogLevel, out io.Writer)
@@ -227,14 +236,17 @@ func createFileLogger(file string, level ...LogLevel) (logger, error) {
 	return instance, nil
 }
 
+// Create returns a new Logger with the given minimum level (default stdout/stderr).
 func Create(logLevel LogLevel) Logger {
 	return create(logLevel)
 }
 
+// NewWithWriters returns a Logger that writes to the given out (info and below) and err (warn and above) writers.
 func NewWithWriters(out io.Writer, err io.Writer, logLevel LogLevel) Logger {
 	return createWithWriters(out, err, logLevel)
 }
 
+// NewLevelRouter returns a LevelRouter with optional per-level outputs; the second argument is the minimum level (default INFO).
 func NewLevelRouter(outputs map[LogLevel]io.Writer, level ...LogLevel) LevelRouter {
 	logLevel := INFO
 	if len(level) > 0 {

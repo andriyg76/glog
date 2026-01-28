@@ -154,10 +154,12 @@ func (c composite) SetLevel(logLevel LogLevel) {
 	}
 }
 
+// DefaultComposite sets the default logger to a composite that forwards every call to main and then to each of loggers.
 func DefaultComposite(main Logger, loggers ...Logger) {
 	setDefault(Composite(main, loggers...))
 }
 
+// Composite returns a Logger that forwards every log call to main and then to each of loggers (e.g. file + console).
 func Composite(main Logger, loggers ...Logger) Logger {
 	return composite{chain: append([]Logger{main}, loggers...)}
 }
